@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { User } from 'src/users/entities/user.entity';
 import { AuthResponse } from './types/auth-response.type';
 import { SignupInput } from './dto/inputs/signup.input';
@@ -44,7 +44,19 @@ export class AuthService {
 
     }
 
-    async revalidateToken(): Promise<User> {
-        throw new Error('FindOne action not implemented')
+    async validateUser( id: string ): Promise<User> {
+        const user = await this.userService.findOneById(id);
+
+        if(!user.isActive) throw new UnauthorizedException(`User is inactive, talk with an admin`);
+
+        //delete user.password;
+
+        return user
+    }
+
+    async revalidateToken( user: User): Promise<AuthResponse> {
+        const token = await this.getJwtToken( user.id );
+        
+        return {token, user};
     }
 }
